@@ -1,83 +1,71 @@
 package com.odin.core.update.service;
 
-import java.sql.Timestamp;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-import org.springframework.util.ObjectUtils;
 
 import com.odin.core.update.constants.LanguageConstants;
 import com.odin.core.update.constants.ResponseCodes;
-import com.odin.core.update.dto.JwtDTO;
-import com.odin.core.update.dto.ProfileDTO;
 import com.odin.core.update.dto.ResponseDTO;
 import com.odin.core.update.entity.Profile;
 import com.odin.core.update.repo.ProfileRepository;
-import com.odin.core.update.utility.JwtTokenUtil;
+import com.odin.core.update.utility.GenericSpecification;
 import com.odin.core.update.utility.ResponseObject;
+import com.odin.core.update.utility.SearchCriteria;
 
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
 public class FetchCustomerServiceImpl implements FetchService {
-	
-	   @Autowired
-	    private ProfileRepository profileRepo;
 
-	    @Autowired
-	    private ResponseObject response;
+	@Autowired
+	private ProfileRepository profileRepo;
 
-	    @Autowired
-	    private JwtTokenUtil jwtTokenUtil;
+	@Autowired
+	private ResponseObject responseObj;
 
-	    @Value("${max.incorrect.password.count}")
-	    private String maxIncorrectPasswordCount;
+	@Override
+	public ResponseDTO searchProfiles(List<SearchCriteria> searchCriteriaList) {
+	    Specification<Profile> resultSpecification = null;
 
-	    @Override
-	    public ResponseDTO fetch(ProfileDTO profileDTO) {
-	        log.info("Fetching customer profile by mobile : {} or email : {}", profileDTO.getMobile(),
-	                profileDTO.getEmail());
-	        profileDTO.setMobile(ObjectUtils.isEmpty(profileDTO.getMobile()) ? profileDTO.getEmail()
-	                : profileDTO.getMobile());
-	        Profile profile = profileRepo.findByMobileOrEmail(profileDTO.getMobile(), profileDTO.getEmail());
-	        if(ObjectUtils.isEmpty(profile)) {
-	        	return response.buildResponse(LanguageConstants.EN, ResponseCodes.USER_NOT_EXISTS);
-	        }
-	        if (ObjectUtils.isEmpty(profile.getAuth())) {
-	            log.error("Failed to fetch auth instance for customer with identifier : {}", profileDTO.getMobile());
-	            return response.buildResponse(LanguageConstants.EN, ResponseCodes.INTERNAL_SERVER_ERROR);
-	        }
+	    for (SearchCriteria criteria : searchCriteriaList) {
+	    	System.out.println(
+	    			"Processing criteria: key=" + criteria.getKey() + ", operation={}," + criteria.getOperation()
+	    					+ " value=" + criteria.getValue() + ", condition=" + criteria.getCondition());
 
-	        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-	        boolean isPasswordMatch = passwordEncoder.matches(profileDTO.getAuth().getPassword(),
-	                profile.getAuth().getPassword());
+	        // Ensure criteria are processed even if value is empty, since the condition (OR) is important
+	        GenericSpecification<Profile> spec = new GenericSpecification<>(criteria);
 
-	        if (isPasswordMatch) {
-	            // Update login details
-	            profile.getAuth().setLastLoginTimestamp(new Timestamp(System.currentTimeMillis()));
-	            profile.getAuth().setTempLockCount(0);
-	            profile.getAuth().setPermLockCount(0);
-	            profile.getAuth().setIncorrectPasswordCount(0);
-	            profileRepo.save(profile);
-
-	            // Generate JWT token
-	            String token = jwtTokenUtil.generateToken(profileDTO.getMobile());
-	            JwtDTO jwtResponse = JwtDTO.builder().accessToken(token).build();
-	            // Return response with JWT token
-	            return response.buildResponse(LanguageConstants.EN, ResponseCodes.SUCCESS_CODE, jwtResponse);
+	        if (resultSpecification == null) {
+	            resultSpecification = spec;
 	        } else {
-	            // Handle incorrect password case
-	            profile.getAuth().setIncorrectPasswordCount(profile.getAuth().getIncorrectPasswordCount() + 1);
-	            if (profile.getAuth().getIncorrectPasswordCount() == Integer.valueOf(maxIncorrectPasswordCount)) {
-	                profile.getAuth().setTempLockDate(new Timestamp(System.currentTimeMillis()));
-	                profile.getAuth().setTempLockCount(1);
+	            // Apply condition (AND/OR) between criteria
+	            if ("OR".equalsIgnoreCase(criteria.getCondition())) {
+	                resultSpecification = Specification.where(resultSpecification).or(spec);
+	            } else {
+	                resultSpecification = Specification.where(resultSpecification).and(spec); // Default to AND
 	            }
-	            profileRepo.save(profile);
-	            return response.buildResponse(LanguageConstants.EN, ResponseCodes.FAILURE_CODE);
 	        }
 	    }
 
+	    if (resultSpecification == null) {
+	        throw new IllegalArgumentException("No valid search criteria provided.");
+	    }
+
+	    // Execute the query using the OR logic for mobile and email
+	    List<Profile> profiles = profileRepo.findAll(resultSpecification);
+	    if (profiles.isEmpty()) {
+	        return responseObj.buildResponse(LanguageConstants.EN, ResponseCodes.NO_DATA_FOUND);
+	    }
+	    return responseObj.buildResponse(LanguageConstants.EN, ResponseCodes.SUCCESS_CODE, profiles.get(0));
+	}
+
+	@Override
+	public ResponseDTO update(Profile profile) {
+		profileRepo.save(profile);
+		return responseObj.buildResponse(LanguageConstants.EN, ResponseCodes.SUCCESS_CODE, profile);
+	}
 }

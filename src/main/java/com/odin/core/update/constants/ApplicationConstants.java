@@ -10,5 +10,7 @@ public class ApplicationConstants {
 	public static final String CUSTOMER = "/customer";
 	public static final String CREATE = "/create";
 	public static final String SIGN_IN = "/signIn";
+	public static final String DETAILS = "/details";
+	public static final String UPDATE = "/update";
 
 }
