@@ -12,5 +12,7 @@ public class ApplicationConstants {
 	public static final String SIGN_IN = "/signIn";
 	public static final String DETAILS = "/details";
 	public static final String UPDATE = "/update";
+	public static final String FILE = "/file";
+	public static final String FETCH = "/fetch";
 
 }

@@ -2,20 +2,22 @@ package com.odin.core.update.entity;
 
 import java.sql.Timestamp;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.odin.core.update.enums.CustomerType;
 
 import lombok.AllArgsConstructor;
@@ -93,7 +95,7 @@ public class Profile {
     @Column(name = "bank_details")
     private String bankDetails;
 
-    @OneToOne
-    @JoinColumn(name = "customer_id", referencedColumnName = "customer_id")
+    @OneToOne(mappedBy = "profile", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonManagedReference
     private Auth auth;
 }

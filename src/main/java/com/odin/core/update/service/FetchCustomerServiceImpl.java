@@ -18,8 +18,8 @@ import com.odin.core.update.utility.SearchCriteria;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Service
-public class FetchCustomerServiceImpl implements FetchService {
+@Service(value = "profileService")
+public class FetchCustomerServiceImpl implements FetchService<Profile> {
 
 	@Autowired
 	private ProfileRepository profileRepo;
@@ -28,7 +28,7 @@ public class FetchCustomerServiceImpl implements FetchService {
 	private ResponseObject responseObj;
 
 	@Override
-	public ResponseDTO searchProfiles(List<SearchCriteria> searchCriteriaList) {
+	public ResponseDTO search(List<SearchCriteria> searchCriteriaList) {
 	    Specification<Profile> resultSpecification = null;
 
 	    for (SearchCriteria criteria : searchCriteriaList) {
@@ -60,7 +60,7 @@ public class FetchCustomerServiceImpl implements FetchService {
 	    if (profiles.isEmpty()) {
 	        return responseObj.buildResponse(LanguageConstants.EN, ResponseCodes.NO_DATA_FOUND);
 	    }
-	    return responseObj.buildResponse(LanguageConstants.EN, ResponseCodes.SUCCESS_CODE, profiles.get(0));
+	    return responseObj.buildResponse(LanguageConstants.EN, ResponseCodes.SUCCESS_CODE, profiles);
 	}
 
 	@Override

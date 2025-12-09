@@ -2,15 +2,13 @@ package com.odin.core.update.service;
 
 import java.util.List;
 
-import com.odin.core.update.dto.ProfileDTO;
 import com.odin.core.update.dto.ResponseDTO;
-import com.odin.core.update.entity.Profile;
 import com.odin.core.update.utility.SearchCriteria;
 
-public interface FetchService {
+public interface FetchService<T> {
 
-	ResponseDTO searchProfiles(List<SearchCriteria> searchCriteriaList);
-
-	ResponseDTO update(Profile profile);
+	ResponseDTO search(List<SearchCriteria> searchCriteriaList);
+	
+	ResponseDTO update(T entity);
 
 }

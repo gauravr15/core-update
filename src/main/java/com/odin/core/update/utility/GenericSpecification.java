@@ -37,7 +37,7 @@ public class GenericSpecification<T> implements Specification<T> {
             throw new IllegalArgumentException("Field not found or cannot convert value for key: " + key, e);
         }
 
-        switch (operation) {
+        switch (operation.toLowerCase()) {
             case ":":
                 return builder.equal(root.get(key), value);
             case ">":
@@ -51,7 +51,16 @@ public class GenericSpecification<T> implements Specification<T> {
             case "like":
                 return builder.like(root.get(key), "%" + value + "%");
             case "in":
-                return root.get(key).in(value);
+            	if (value instanceof Iterable<?>) {
+                    CriteriaBuilder.In<Object> inClause = builder.in(root.get(key));
+                    for (Object v : (Iterable<?>) value) {
+                        if (v != null) {
+                            inClause.value(v);
+                        }
+                    }
+                    return inClause;
+                }
+                return builder.equal(root.get(key), value);
             default:
                 return null;
         }
