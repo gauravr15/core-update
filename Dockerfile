@@ -12,7 +12,6 @@ ENV SPRING_PROFILES_ACTIVE=production,global
 #ENV EUREKA_CLIENT_FETCH_REGISTRY=false
 
 
-# Disable all metrics to avoid cgroup crash
 ENV MANAGEMENT_METRICS_ENABLE_ALL=false
 ENV MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=health,info
 
