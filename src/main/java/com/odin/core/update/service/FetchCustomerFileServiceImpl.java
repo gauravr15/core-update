@@ -30,7 +30,7 @@ public class FetchCustomerFileServiceImpl implements FetchService<FileEntity> {
 	@Override
 	public ResponseDTO search(List<SearchCriteria> searchCriteriaList) {
 		Specification<FileEntity> resultSpecification = null;
-
+		log.info("search criteria values : {}", searchCriteriaList);
 		for (SearchCriteria criteria : searchCriteriaList) {
 			System.out.println(
 					"Processing criteria: key=" + criteria.getKey() + ", operation={}," + criteria.getOperation()
@@ -59,8 +59,10 @@ public class FetchCustomerFileServiceImpl implements FetchService<FileEntity> {
 		// Execute the query using the OR logic for mobile and email
 		List<FileEntity> profiles = fileRepo.findAll(resultSpecification);
 		if (profiles.isEmpty()) {
+			log.info("No file data found");
 			return responseObj.buildResponse(LanguageConstants.EN, ResponseCodes.NO_DATA_FOUND);
 		}
+		log.debug("size of file data list : {}", profiles.size());
 		return responseObj.buildResponse(LanguageConstants.EN, ResponseCodes.SUCCESS_CODE, profiles);
 	}
 
