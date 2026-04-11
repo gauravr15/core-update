@@ -21,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service(value = "fileService")
 public class FetchCustomerFileServiceImpl implements FetchService<FileEntity> {
 
+
 	@Autowired
 	private FileRepository fileRepo;
 
@@ -30,8 +31,10 @@ public class FetchCustomerFileServiceImpl implements FetchService<FileEntity> {
 	@Override
 	public ResponseDTO search(List<SearchCriteria> searchCriteriaList) {
 		Specification<FileEntity> resultSpecification = null;
-		log.info("search criteria values : {}", searchCriteriaList);
+		log.info("[CORE-UPDATE-FILE] search called with {} criteria: {}", searchCriteriaList.size(), searchCriteriaList);
 		for (SearchCriteria criteria : searchCriteriaList) {
+			log.info("[CORE-UPDATE-FILE] criteria: key={} op={} value={} condition={}",
+					criteria.getKey(), criteria.getOperation(), criteria.getValue(), criteria.getCondition());
 			System.out.println(
 					"Processing criteria: key=" + criteria.getKey() + ", operation={}," + criteria.getOperation()
 							+ " value=" + criteria.getValue() + ", condition=" + criteria.getCondition());
@@ -58,11 +61,18 @@ public class FetchCustomerFileServiceImpl implements FetchService<FileEntity> {
 
 		// Execute the query using the OR logic for mobile and email
 		List<FileEntity> profiles = fileRepo.findAll(resultSpecification);
+		log.info("[CORE-UPDATE-FILE] Query returned {} rows for {} criteria",
+				profiles.size(), searchCriteriaList.size());
+		if (!profiles.isEmpty()) {
+			profiles.forEach(f -> log.info(
+				"[CORE-UPDATE-FILE] Found row: id={} customerId={} fileType={} isActive={} filePath={} (absolute)",
+				f.getId(), f.getCustomerId(), f.getFileType(), f.getIsActive(), f.getFilePath()));
+		}
 		if (profiles.isEmpty()) {
-			log.info("No file data found");
+			log.info("[CORE-UPDATE-FILE] No file data found for criteria");
 			return responseObj.buildResponse(LanguageConstants.EN, ResponseCodes.NO_DATA_FOUND);
 		}
-		log.debug("size of file data list : {}", profiles.size());
+		log.info("[CORE-UPDATE-FILE] Returning {} records to caller", profiles.size());
 		return responseObj.buildResponse(LanguageConstants.EN, ResponseCodes.SUCCESS_CODE, profiles);
 	}
 
